@@ -27,15 +27,23 @@ else()
 endif()
 
 # Define source files
-file(GLOB_RECURSE SOURCES 
+file(GLOB SOURCES 
     "src/*.c"
 )
+
+# Special handling for entry point files
+# Use the new unified shell_entry.c instead of the old entry point files
+list(FILTER SOURCES EXCLUDE REGEX ".*main\\.c$")      # Exclude main.c
+list(FILTER SOURCES EXCLUDE REGEX ".*main_gui\\.c$")  # Exclude main_gui.c
+list(FILTER SOURCES EXCLUDE REGEX ".*win_main\\.c$")  # Exclude win_main.c
+list(FILTER SOURCES EXCLUDE REGEX ".*win_gui_common\\.c$")  # Exclude win_gui_common.c
 
 # Explicitly add the UTF-8 and localization source files
 list(APPEND SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utf8.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utf8_output.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/locale.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/shell_entry.c"
 )
 
 # Define header files
@@ -80,10 +88,12 @@ if(WIN32)
     # Add Windows-specific libraries
     target_link_libraries(hsh PRIVATE shell32 user32 gdi32 kernel32)
     
-    # Add comctl32 for Windows Common Controls
+    # Add comctl32 for Windows Common Controls - always needed for shell_entry.c
+    target_link_libraries(hsh PRIVATE comctl32)
+    
+    # Add additional definitions for GUI mode
     if(WIN_GUI)
-        target_link_libraries(hsh PRIVATE comctl32)
-        target_compile_definitions(hsh PRIVATE _WIN32_IE=0x0600)
+        target_compile_definitions(hsh PRIVATE _WIN32_IE=0x0600 WIN_GUI)
     endif()
     
     # Add resource file for Windows GUI mode
